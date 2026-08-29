@@ -1,0 +1,6 @@
+{
+  "name": "股票成本计算器",
+  "description": "快速计算股票补仓、减仓后的摊薄成本价，支持手机端完美适配。",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
