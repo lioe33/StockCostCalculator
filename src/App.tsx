@@ -14,6 +14,9 @@ export default function App() {
   const [actionType, setActionType] = useState<'buy' | 'sell'>('buy');
   const [tradeShares, setTradeShares] = useState('');
   const [tradePrice, setTradePrice] = useState('');
+  
+  const [basePrice, setBasePrice] = useState('');
+  const [percentChange, setPercentChange] = useState('');
 
   const result = useMemo(() => {
     const hs = parseFloat(holdShares) || 0;
@@ -56,6 +59,8 @@ export default function App() {
     setTradeShares('');
     setTradePrice('');
     setActionType('buy');
+    setBasePrice('');
+    setPercentChange('');
   };
 
   const formatNumber = (num: number, decimals: number = 2) => {
@@ -223,6 +228,57 @@ export default function App() {
             </motion.section>
           )}
         </AnimatePresence>
+
+        {/* Section 4: Price Fluctuation Projection */}
+        <section className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mt-2">
+          <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
+            涨跌幅推算
+          </h2>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <NumberInput 
+              label="基准股价" 
+              value={basePrice} 
+              onChange={setBasePrice} 
+              placeholder="0.00" 
+            />
+            <NumberInput 
+              label="波动比例" 
+              value={percentChange} 
+              onChange={setPercentChange} 
+              placeholder="10" 
+              suffix="%"
+            />
+          </div>
+
+          <AnimatePresence>
+            {basePrice && percentChange && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                className="grid grid-cols-2 gap-3 overflow-hidden"
+              >
+                <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 flex flex-col justify-center">
+                  <div className="text-xs text-rose-600/80 font-medium mb-1 flex items-center gap-1">
+                    <TrendingUp className="w-3.5 h-3.5" /> 上涨 {percentChange}%
+                  </div>
+                  <div className="text-xl font-bold text-rose-700">
+                    {formatNumber(parseFloat(basePrice) * (1 + Math.abs(parseFloat(percentChange)) / 100), 3)}
+                  </div>
+                </div>
+                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex flex-col justify-center">
+                  <div className="text-xs text-emerald-600/80 font-medium mb-1 flex items-center gap-1">
+                    <TrendingDown className="w-3.5 h-3.5" /> 下跌 {percentChange}%
+                  </div>
+                  <div className="text-xl font-bold text-emerald-700">
+                    {formatNumber(parseFloat(basePrice) * (1 - Math.abs(parseFloat(percentChange)) / 100), 3)}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </section>
 
       </div>
     </div>
