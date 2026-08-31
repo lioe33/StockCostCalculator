@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useMemo } from 'react';
-import { Calculator, ArrowRight, TrendingDown, TrendingUp, RefreshCcw } from 'lucide-react';
+import { Calculator, ArrowRight, TrendingDown, TrendingUp, RefreshCcw, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export default function App() {
@@ -17,6 +17,9 @@ export default function App() {
   
   const [basePrice, setBasePrice] = useState('');
   const [percentChange, setPercentChange] = useState('');
+
+  const [targetCost, setTargetCost] = useState('');
+  const [planBuyShares, setPlanBuyShares] = useState('');
 
   const result = useMemo(() => {
     const hs = parseFloat(holdShares) || 0;
@@ -48,6 +51,30 @@ export default function App() {
     };
   }, [holdShares, holdCost, actionType, tradeShares, tradePrice]);
 
+  const reverseResult = useMemo(() => {
+    const hs = parseFloat(holdShares) || 0;
+    const hc = parseFloat(holdCost) || 0;
+    const tc = parseFloat(targetCost) || 0;
+    const pbs = parseFloat(planBuyShares) || 0;
+
+    if (hs <= 0 || hc <= 0 || tc <= 0 || pbs <= 0) return null;
+
+    if (tc >= hc) {
+      return { error: '梦想成本价需低于当前持仓成本' };
+    }
+
+    const currentTotal = hs * hc;
+    const targetTotal = (hs + pbs) * tc;
+    const requiredBuyTotal = targetTotal - currentTotal;
+    const requiredBuyPrice = requiredBuyTotal / pbs;
+
+    if (requiredBuyPrice <= 0) {
+      return { error: '目标过低！即使该股跌到0元买入也无法达到此成本' };
+    }
+
+    return { price: requiredBuyPrice };
+  }, [holdShares, holdCost, targetCost, planBuyShares]);
+
   const resetTrade = () => {
     setTradeShares('');
     setTradePrice('');
@@ -61,6 +88,8 @@ export default function App() {
     setActionType('buy');
     setBasePrice('');
     setPercentChange('');
+    setTargetCost('');
+    setPlanBuyShares('');
   };
 
   const formatNumber = (num: number, decimals: number = 2) => {
@@ -229,7 +258,59 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        {/* Section 4: Price Fluctuation Projection */}
+        {/* Section 4: Reverse Calculation (Target Cost) */}
+        <section className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mt-2">
+          <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <span className="w-1.5 h-4 bg-violet-500 rounded-full"></span>
+            目标成本倒推
+          </h2>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <NumberInput 
+              label="梦想成本价" 
+              value={targetCost} 
+              onChange={setTargetCost} 
+              placeholder="0.00" 
+            />
+            <NumberInput 
+              label="计划买入股数" 
+              value={planBuyShares} 
+              onChange={setPlanBuyShares} 
+              placeholder="0" 
+              suffix="股"
+            />
+          </div>
+
+          <AnimatePresence>
+            {targetCost && planBuyShares && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                animate={{ opacity: 1, height: 'auto', marginTop: 16 }}
+                exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                className="overflow-hidden"
+              >
+                {reverseResult?.error ? (
+                  <div className="bg-orange-50 text-orange-600 text-sm p-4 rounded-2xl border border-orange-100 text-center font-medium">
+                    {reverseResult.error}
+                  </div>
+                ) : reverseResult?.price ? (
+                  <div className="bg-violet-50 border border-violet-100 rounded-2xl p-4 flex flex-col items-center justify-center relative overflow-hidden">
+                    <div className="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4">
+                      <Target className="w-24 h-24" />
+                    </div>
+                    <div className="text-xs text-violet-600/80 font-medium mb-1 relative z-10">
+                      需在该股价买入
+                    </div>
+                    <div className="text-3xl font-bold text-violet-700 relative z-10 tracking-tight">
+                      {formatNumber(reverseResult.price, 3)}
+                    </div>
+                  </div>
+                ) : null}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </section>
+
+        {/* Section 5: Price Fluctuation Projection */}
         <section className="bg-white rounded-3xl p-5 shadow-sm border border-gray-100 mt-2">
           <h2 className="text-sm font-bold text-gray-900 mb-4 flex items-center gap-2">
             <span className="w-1.5 h-4 bg-indigo-500 rounded-full"></span>
